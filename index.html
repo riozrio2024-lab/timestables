@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>乘數表測驗</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    .question {
+      font-size: 20px;
+      margin: 20px 0;
+    }
+    .answer-box {
+      font-size: 24px;
+      padding: 10px;
+      width: 100px;
+      margin: 10px auto;
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .keyboard {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 10px auto;
+      max-width: 300px;
+    }
+    .key {
+      font-size: 18px;
+      padding: 15px;
+      text-align: center;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    .key:active {
+      background-color: #0056b3;
+    }
+    .key.clear {
+      grid-column: span 2;
+      background-color: #ff6b6b;
+    }
+    .key.submit {
+      background-color: #28a745;
+    }
+    .restart {
+      margin-top: 20px;
+      font-size: 16px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      background-color: #ffc107;
+      color: white;
+      cursor: pointer;
+    }
+    .restart:active {
+      background-color: #e0a800;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .message {
+      font-size: 16px;
+      color: red;
+      display: none;
+    }
+    .score, .timer {
+      font-size: 18px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>乘數表測驗</h1>
+    <div class="timer">剩餘時間：<span id="time">5:00</span></div>
+    <div class="score">得分：<span id="score">0</span></div>
+    <div class="question" id="question"></div>
+    <div class="answer-box" id="answerBox">0</div>
+    <div class="keyboard" id="keyboard">
+      <!-- 虛擬鍵盤按鍵 -->
+      <button class="key">1</button>
+      <button class="key">2</button>
+      <button class="key">3</button>
+      <button class="key">4</button>
+      <button class="key">5</button>
+      <button class="key">6</button>
+      <button class="key">7</button>
+      <button class="key">8</button>
+      <button class="key">9</button>
+      <button class="key clear">清除</button>
+      <button class="key">0</button>
+      <button class="key submit">提交</button>
+    </div>
+    <div class="message" id="message">答案錯誤，請繼續嘗試。</div>
+    <button class="restart" id="restart">重新開始</button>
+  </div>
+  <script>
+    // 初始化變數
+    const questionElement = document.getElementById("question");
+    const answerBox = document.getElementById("answerBox");
+    const keyboard = document.getElementById("keyboard");
+    const restartButton = document.getElementById("restart");
+    const messageElement = document.getElementById("message");
+    const scoreElement = document.getElementById("score");
+    const timeElement = document.getElementById("time");
+
+    let score = 0;
+    let timeLeft = 300; // 5 分鐘倒數（以秒為單位）
+    let currentQuestion = {};
+    let timer;
+
+    // 隨機生成一道乘法題目
+    function generateQuestion() {
+      const num1 = Math.floor(Math.random() * 8) + 2; // 2-9
+      const num2 = Math.floor(Math.random() * 8) + 2; // 2-9
+      currentQuestion = { num1, num2, answer: num1 * num2 };
+      questionElement.textContent = `${num1} × ${num2} = ?`;
+    }
+
+    // 更新分數
+    function updateScore() {
+      scoreElement.textContent = score;
+    }
+
+    // 格式化時間為「分鐘 : 秒」
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${minutes}:${secs < 10 ? "0" + secs : secs}`;
+    }
+
+    // 倒數計時器
+    function startTimer() {
+      timer = setInterval(() => {
+        timeLeft--;
+        timeElement.textContent = formatTime(timeLeft);
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          endGame();
+        }
+      }, 1000);
+    }
+
+    // 結束遊戲
+    function endGame() {
+      questionElement.textContent = "時間結束！";
+      keyboard.querySelectorAll(".key").forEach(key => key.disabled = true);
+      messageElement.style.display = "none";
+    }
+
+    // 重新開始遊戲
+    function restartGame() {
+      // 重置變數
+      score = 0;
+      timeLeft = 300;
+      updateScore();
+      timeElement.textContent = formatTime(timeLeft);
+      answerBox.textContent = "0";
+      keyboard.querySelectorAll(".key").forEach(key => (key.disabled = false));
+      messageElement.style.display = "none";
+      generateQuestion();
+      clearInterval(timer);
+      startTimer();
+    }
+
+    // 處理鍵盤輸入
+    keyboard.addEventListener("click", (event) => {
+      const key = event.target;
+      if (!key.classList.contains("key")) return;
+
+      const value = key.textContent;
+
+      // 按下清除鍵
+      if (key.classList.contains("clear")) {
+        answerBox.textContent = "0";
+      }
+      // 按下提交鍵
+      else if (key.classList.contains("submit")) {
+        const userAnswer = parseInt(answerBox.textContent);
+        if (userAnswer === currentQuestion.answer) {
+          score++;
+          updateScore();
+          generateQuestion();
+          answerBox.textContent = "0";
+        } else {
+          messageElement.style.display = "block";
+          setTimeout(() => {
+            messageElement.style.display = "none";
+          }, 2000);
+        }
+      }
+      // 按下數字鍵
+      else {
+        if (answerBox.textContent === "0") {
+          answerBox.textContent = value;
+        } else {
+          answerBox.textContent += value;
+        }
+      }
+    });
+
+    // 初始化遊戲
+    function init() {
+      timeElement.textContent = formatTime(timeLeft); // 顯示初始時間
+      generateQuestion();
+      startTimer();
+
+      // 重新開始按鈕
+      restartButton.addEventListener("click", restartGame);
+    }
+
+    // 啟動遊戲
+    init();
+  </script>
+</body>
+</html>
